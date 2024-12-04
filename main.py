@@ -11,7 +11,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from dotenv import load_dotenv
-#from bs4 import BeautifulSoup
 
 load_dotenv()
 
@@ -35,17 +34,6 @@ def type_like_a_human(element, text):
         element.send_keys(char)
         time.sleep(random.uniform(0.2, 2.0)) 
 
-def click_not_now(driver):
-    try:
-        not_now_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//*[text()='Agora não']"))
-        )
-        not_now_button.click()
-        print("'Agora não' clicado com sucesso.")
-    except Exception as e:
-        print(f"'Agora não' não foi encontrado: {e}")
-        time.sleep(2)
-        
 def check_login_errors(driver):
     if is_element_present(driver, "//p[contains(text(), 'senha incorreta')]"):
         print("Erro de login: Senha incorreta.")
@@ -59,6 +47,17 @@ def check_login_errors(driver):
     
     print("Erro desconhecido durante o login.")
     return False
+
+def click_not_now(driver):
+    try:
+        not_now_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//*[text()='Agora não']"))
+        )
+        not_now_button.click()
+    except Exception as e:
+        print(f"'Agora não' não foi encontrado: {e}")
+        time.sleep(2)
+        
 
 def login(driver, username, password):
     driver.get("https://www.instagram.com/accounts/login/")
@@ -82,7 +81,6 @@ def login(driver, username, password):
         return True
     
 def click_search_icon(driver):
-    try:
         tools_container = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.CLASS_NAME, "x1iyjqo2.xh8yej3"))
         )
@@ -90,34 +88,25 @@ def click_search_icon(driver):
         tools = tools_container.find_elements(By.CLASS_NAME, "x1n2onr6.x6s0dn4.x78zum5")
         
         if len(tools) > 2: 
-            search_tool = tools[2]  # Seleciona o terceiro item (Search/Pesquisa)
+            search_tool = tools[2]  # terceiro item
             search_tool.click()
             time.sleep(2)
-            
-    except Exception as e:
-        print(f"Erro ao tentar localizar ou clicar na lupa: {e}")
+
     
 def type_in_search_field(driver, search_text):
-    try:
         search_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.XPATH, "//input[@placeholder='Pesquisar']"))
         )
         
         type_like_a_human(search_field, search_text)
-        print("Texto digitado no campo de pesquisa com sucesso!")
+        time.sleep(2)       
         
-    except Exception as e:
-        print(f"Erro ao tentar digitar no campo de pesquisa: {e}")
-
-####CRIAR LOOP QUE ACESSA OS POSTS
-
 def click_first_search_result(driver):
     try:
         first_result = WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.CLASS_NAME, "x1i10hfl.x1qjc9v5.xjbqb8w.xjqpnuy.xa49m3k.xqeqjp1.x2hbi6w.x13fuv20.xu3j5b3.x1q0q8m5.x26u7qi.x972fbf.xcfux6l.x1qhh985.xm0m39n.x9f619.x1ypdohk.xdl72j9.x2lah0s.xe8uvvx.xdj266r.x11i5rnm.xat24cr.x1mh8g0r.x2lwn1j.xeuugli.xexx8yu.x4uap5.x18d9i69.xkhd6sd.x1n2onr6.x16tdsg8.x1hl2dhg.xggy1nq.x1ja2u2z.x1t137rt.x1q0g3np.x87ps6o.x1lku1pv.x1a2a7pz.x1dm5mii.x16mil14.xiojian.x1yutycm.x1lliihq.x193iq5w.xh8yej3"))
         )
         first_result.click()
-        print("Primeiro resultado clicado com sucesso!")
         
     except Exception as e:
         print(f"Erro ao tentar clicar no primeiro resultado: {e}")
@@ -153,13 +142,13 @@ def get_post_details(driver):
         print(f"Data e Hora da postagem: {post_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"Tipo de postagem: {post_type}")
 
+
+
     except Exception as e:
         print("Erro ao coletar dados do post:", e)
         
 def get_likes(driver):
-    try:
-        print("Iniciando coleta de curtidas...")
-        
+    try:        
         likes_element = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, "//section//span[contains(text(), 'curtidas') or contains(text(), 'likes')]/span"))
         )
@@ -175,7 +164,7 @@ def get_likes(driver):
         print(f"Número de curtidas: {likes}")
         return likes
     except Exception as e:
-        print(f"Erro ao coletar curtidas: {e}")
+        print(f"Erro ao coletar curtidas: {e}/n")
         return 0
 
 def open_likers_list(driver):
@@ -190,60 +179,58 @@ def open_likers_list(driver):
         )
     except Exception as e:
         print(f"Erro ao abrir a lista de curtidores: {e}")
-    
-def scroll_like_human_likers(driver):
-    try:
-        like_list_xpath = "/html/body/div[5]/div[2]/div/div/div[1]/div/div[2]/div/div/div/div/div[2]/div/div[2]/div"
-        like_list = driver.find_element(By.XPATH, like_list_xpath)
-        
-        last_height = driver.execute_script("return arguments[0].scrollHeight", like_list)
-        
-        driver.execute_script("arguments[0].scrollTop += arguments[0].offsetHeight", like_list)
-        time.sleep(random.uniform(1, 3))
-        
-        new_height = driver.execute_script("return arguments[0].scrollHeight", like_list)
-        if new_height == last_height:
-            return False
-        return True
-    except Exception as e:
-        print(f"Erro ao realizar scroll humano na lista de curtidores: {e}")
-        return False
 
-def add_likers(driver):
+def collect_likers(driver):
     try:
         likers_elements = driver.find_elements(By.XPATH, "//div[@role='dialog']//div[@class='x9f619 xjbqb8w x78zum5 x168nmei x13lgxp2 x5pf9jr xo71vjh x1n2onr6 x1plvlek xryxfnj x1c4vz4f x2lah0s x1q0g3np xqjyukv x6s0dn4 x1oa3qoh x1nhvcw1']")
+
+        print(f"Elementos encontrados: {len(likers_elements)}")  
         
         likers = []
-        for liker in likers_elements:
+        for liker in likers_elements[1:]:  # o índice 0
             liker_text = liker.text.strip()
-            if liker_text:
+            if liker_text and not any(keyword in liker_text for keyword in ["há", "dias", "semanas", "meses", "anos"]):
                 likers.append(liker_text)
-        
+
         likers = list(set(likers))
         return likers
     except Exception as e:
         print(f"Erro ao coletar curtidores: {e}")
         return []
         
-def collect_likers(driver, max_scrolls=20):
+def scroll_like_human_likers(driver, max_scrolls=10):
     try:
-        open_likers_list(driver)
-        likers = set()
+        #xpath pode alterar de acordo com a navegador utilizado
+        #like_list_xpath = "/html/body/div[7]/div[2]/div/div/div[1]/div/div[2]/div/div/div/div/div[2]/div/div[2]/div" POR CONDA
+        
+        like_list_xpath = "/html/body/div[6]/div[2]/div/div/div[1]/div/div[2]/div/div/div/div/div[2]/div/div[2]/div"
+        like_list = driver.find_element(By.XPATH, like_list_xpath)
+        
+        last_height = driver.execute_script("return arguments[0].scrollHeight", like_list)
         
         for _ in range(max_scrolls):
-            new_likers = add_likers(driver)
-            likers.update(new_likers)
+            driver.execute_script("arguments[0].scrollTop += arguments[0].offsetHeight", like_list)
+            time.sleep(random.uniform(1, 3))
             
-            if not scroll_like_human_likers(driver):
+            new_height = driver.execute_script("return arguments[0].scrollHeight", like_list)
+            if new_height == last_height:
                 break
+            last_height = new_height
         
-        print(f"Total de curtidores coletados: {len(likers)}")
-        print(", ".join(likers))
-        return list(likers)
     except Exception as e:
-        print(f"Erro ao coletar curtidores: {e}")
-        return []
-    
+        print(f"Erro ao realizar scroll humano na lista de curtidores: {e}")
+
+def scroll_and_collect_likers(driver, max_scrolls=10):
+    all_likers = set()
+    for _ in range(max_scrolls):
+        scroll_like_human_likers(driver, 1)  
+        likers = collect_likers(driver)
+        all_likers.update(likers)
+        time.sleep(random.uniform(1, 3))  
+        if len(likers) == 0:
+            break  
+    return list(all_likers)
+
 def collect_comments(driver):
     try:
         WebDriverWait(driver, 20).until(
@@ -284,61 +271,47 @@ def scroll_like_human_page(driver, scroll_pause_time=2, max_scrolls=10):
         
         last_height = new_height
         
-def exit_post(driver):
+def exit(driver):
     try:
         actions = ActionChains(driver)
         actions.send_keys(Keys.ESCAPE).perform()
         time.sleep(1)
-        actions.send_keys(Keys.ESCAPE).perform()
-        print("Saiu do post atual.")
     except Exception as e:
         print(f"Erro ao sair do post: {e}")
         
 #ARCHLINUX 
-service = Service("/usr/bin/chromedriver") 
-driver = webdriver.Chrome(service=service)
+#service = Service("/usr/bin/chromedriver") 
+#driver = webdriver.Chrome(service=service)
 #print(f"ChromeDriver Version: {driver.capabilities['chrome']['chromedriverVersion']}")
 #print(f"Browser Version: {driver.capabilities['browserVersion']}") 
 
 #WINDOWS
-#driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
-try:
-    if login(driver, username, password):
-        time.sleep(5)
-        driver.get("https://www.instagram.com/pucmgpocos/")
-        time.sleep(5)
+if login(driver, username, password):
     print("Login realizado com sucesso!")
-    
-    click_search_icon(driver)
-    print("Ícone de pesquisa clicado com sucesso!")
-    
-    search_text = "pucmgpocos"
-    type_in_search_field(driver, search_text)
-    print("Texto digitado no campo de pesquisa com sucesso!")
-    
-    click_first_search_result(driver)
-    print("Primeiro resultado clicado com sucesso!")
-    
-    # Espera explícita para garantir que o post esteja presente
-    post = WebDriverWait(driver, 20).until(
-        EC.presence_of_element_located((By.CLASS_NAME, "_aagw"))
-    )
-    driver.execute_script("arguments[0].click();", post)
-    print("Post clicado com sucesso!")
-    
-    get_post_details(driver)
-    time.sleep(3)
-    print("Detalhes do post coletados com sucesso!")
-    get_likes(driver)
-    time.sleep(1)
-    print("Curtidas coletadas com sucesso!")
-    collect_likers(driver)
-    time.sleep(1)
-    print("Curtidores coletados com sucesso!")
-    #collect_comments(driver)
-    #exit_post(driver)
 
-except Exception as e:
-    print(f"Erro exe: {e}")
-    driver.quit()
+click_search_icon(driver)
+
+search_text = "napucminas"
+type_in_search_field(driver, search_text)
+    
+click_first_search_result(driver)
+time.sleep(2)
+post = WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CLASS_NAME, "_aagw")))
+driver.execute_script("arguments[0].click();", post)
+get_post_details(driver)
+time.sleep(2)
+    
+get_likes(driver)
+time.sleep(1)
+
+open_likers_list(driver)
+
+likers = scroll_and_collect_likers(driver)
+print(likers)
+time.sleep(2)
+
+collect_comments(driver)
+
+input("Pressione Enter para sair e fechar o navegador...")
