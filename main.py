@@ -7,10 +7,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
+from webdriver_manager.chrome import ChromeDriverManager
+
+
 from dotenv import load_dotenv
+#from bs4 import BeautifulSoup
 
 load_dotenv()
 
@@ -88,7 +92,7 @@ def click_search_icon(driver):
         tools = tools_container.find_elements(By.CLASS_NAME, "x1n2onr6.x6s0dn4.x78zum5")
         
         if len(tools) > 2: 
-            search_tool = tools[2]  # terceiro item
+            search_tool = tools[2]  #terceiro item
             search_tool.click()
             time.sleep(2)
 
@@ -101,6 +105,7 @@ def type_in_search_field(driver, search_text):
         type_like_a_human(search_field, search_text)
         time.sleep(2)       
         
+
 def click_first_search_result(driver):
     try:
         first_result = WebDriverWait(driver, 20).until(
@@ -173,7 +178,7 @@ def open_likers_list(driver):
             EC.element_to_be_clickable((By.XPATH, "//section//span[contains(text(), 'curtidas') or contains(text(), 'likes')]/span"))
         )
         driver.execute_script("arguments[0].click();", likers_button)
-        
+
         WebDriverWait(driver, 40).until(
             EC.visibility_of_element_located((By.XPATH, "//div[@role='dialog']//ul"))
         )
@@ -182,12 +187,10 @@ def open_likers_list(driver):
 
 def collect_likers(driver):
     try:
-        likers_elements = driver.find_elements(By.XPATH, "//div[@role='dialog']//div[@class='x9f619 xjbqb8w x78zum5 x168nmei x13lgxp2 x5pf9jr xo71vjh x1n2onr6 x1plvlek xryxfnj x1c4vz4f x2lah0s x1q0g3np xqjyukv x6s0dn4 x1oa3qoh x1nhvcw1']")
-
-        print(f"Elementos encontrados: {len(likers_elements)}")  
-        
+        likers_elements = driver.find_elements(By.XPATH, "//div[@role='dialog']//div[@class='x9f619 xjbqb8w x78zum5 x168nmei x13lgxp2 x5pf9jr xo71vjh x1n2onr6 x1plvlek xryxfnj x1c4vz4f x2lah0s x1q0g3np xqjyukv x6s0dn4 x1oa3qoh x1nhvcw1']")        
         likers = []
-        for liker in likers_elements[1:]:  # o índice 0
+        
+        for liker in likers_elements[1:]:  #índice 0
             liker_text = liker.text.strip()
             if liker_text and not any(keyword in liker_text for keyword in ["há", "dias", "semanas", "meses", "anos"]):
                 likers.append(liker_text)
@@ -199,26 +202,44 @@ def collect_likers(driver):
         return []
         
 def scroll_like_human_likers(driver, max_scrolls=10):
-    try:
-        #xpath pode alterar de acordo com a navegador utilizado
-        #like_list_xpath = "/html/body/div[7]/div[2]/div/div/div[1]/div/div[2]/div/div/div/div/div[2]/div/div[2]/div" POR CONDA
+    # OS XPATHS MUDAM ENTRE NAVEGADORES
+    like_list_xpath_1 = "/html/body/div[7]/div[2]/div/div/div[1]/div/div[2]/div/div/div/div/div[2]/div/div[2]/div"
+    like_list_xpath_2 = "/html/body/div[6]/div[2]/div/div/div[1]/div/div[2]/div/div/div/div/div[2]/div/div[2]/div"
+    time.sleep(1)
+    for _ in range(max_scrolls):
+        try:
+            like_list = WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, like_list_xpath_1)))
+        except TimeoutException:
+            try:
+                like_list = WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, like_list_xpath_2)))
+            except TimeoutException:
+                print("Não conseguiu localizar o elemento após a rolagem1.")
+                return
+    
+    last_height = driver.execute_script("return arguments[0].scrollHeight", like_list)
+    
+    for _ in range(max_scrolls):
+        driver.execute_script("arguments[0].scrollTop += arguments[0].offsetHeight", like_list)
+        time.sleep(random.uniform(1, 3)) 
         
-        like_list_xpath = "/html/body/div[6]/div[2]/div/div/div[1]/div/div[2]/div/div/div/div/div[2]/div/div[2]/div"
-        like_list = driver.find_element(By.XPATH, like_list_xpath)
+        try:
+            WebDriverWait(driver, 5).until(EC.staleness_of(like_list)) 
+        except TimeoutException:
+            pass
         
-        last_height = driver.execute_script("return arguments[0].scrollHeight", like_list)
+        try:
+            like_list = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, like_list_xpath_1)))
+        except TimeoutException:
+            try:
+                like_list = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, like_list_xpath_2)))
+            except TimeoutException:
+                print("Não conseguiu localizar o elemento após a rolagem2.")
+                return
         
-        for _ in range(max_scrolls):
-            driver.execute_script("arguments[0].scrollTop += arguments[0].offsetHeight", like_list)
-            time.sleep(random.uniform(1, 3))
-            
-            new_height = driver.execute_script("return arguments[0].scrollHeight", like_list)
-            if new_height == last_height:
-                break
-            last_height = new_height
-        
-    except Exception as e:
-        print(f"Erro ao realizar scroll humano na lista de curtidores: {e}")
+        new_height = driver.execute_script("return arguments[0].scrollHeight", like_list)
+        if new_height == last_height:
+            break
+        last_height = new_height
 
 def scroll_and_collect_likers(driver, max_scrolls=10):
     all_likers = set()
@@ -228,7 +249,7 @@ def scroll_and_collect_likers(driver, max_scrolls=10):
         all_likers.update(likers)
         time.sleep(random.uniform(1, 3))  
         if len(likers) == 0:
-            break  
+            break 
     return list(all_likers)
 
 def collect_comments(driver):
@@ -278,14 +299,7 @@ def exit(driver):
         time.sleep(1)
     except Exception as e:
         print(f"Erro ao sair do post: {e}")
-        
-#ARCHLINUX 
-#service = Service("/usr/bin/chromedriver") 
-#driver = webdriver.Chrome(service=service)
-#print(f"ChromeDriver Version: {driver.capabilities['chrome']['chromedriverVersion']}")
-#print(f"Browser Version: {driver.capabilities['browserVersion']}") 
 
-#WINDOWS
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
 if login(driver, username, password):
@@ -297,21 +311,35 @@ search_text = "napucminas"
 type_in_search_field(driver, search_text)
     
 click_first_search_result(driver)
-time.sleep(2)
-post = WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CLASS_NAME, "_aagw")))
-driver.execute_script("arguments[0].click();", post)
-get_post_details(driver)
-time.sleep(2)
-    
-get_likes(driver)
 time.sleep(1)
 
-open_likers_list(driver)
 
-likers = scroll_and_collect_likers(driver)
-print(likers)
-time.sleep(2)
+elements = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".x1lliihq.x1n2onr6.xh8yej3.x4gyw5p.x1ntc13c.x9i3mqj.x11i5rnm.x2pgyrj")))
+#element = driver.find_element(By.XPATH, "//*[contains(@class, 'x1lliihq') and contains(@class, 'x1n2onr6') and contains(@class, 'xh8yej3') and contains(@class, 'x4gyw5p') and contains(@class, 'x1ntc13c') and contains(@class, 'x9i3mqj') and contains(@class, 'x11i5rnm') and contains(@class, 'x2pgyrj')]")
 
-collect_comments(driver)
+for index in range(len(elements)):
+    time.sleep(1)
+    print(f"Clicando no post {index + 1} de {len(elements)}")
+    elements[index].click()
+    time.sleep(2)
+    
+    print(f"Coletando dados do post {index + 1}...")
+    get_post_details(driver)
+    time.sleep(2)
+            
+    get_likes(driver)
+    time.sleep(1)
 
-input("Pressione Enter para sair e fechar o navegador...")
+    open_likers_list(driver)
+    time.sleep(2)
+    likers = scroll_and_collect_likers(driver,max_scrolls=5)
+    print(likers)
+    time.sleep(1)
+
+    collect_comments(driver)
+    time.sleep(2)
+            
+    driver.back()
+    time.sleep(2)
+        
+    elements = driver.find_elements(By.CSS_SELECTOR, ".x1lliihq.x1n2onr6.xh8yej3.x4gyw5p.x1ntc13c.x9i3mqj.x11i5rnm.x2pgyrj")
